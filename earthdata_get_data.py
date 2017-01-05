@@ -11,7 +11,7 @@ def setup_argument_parser():
     """Set up command line options.  -h or --help for help is automatic"""
     test_url = "http://e4ftl01.cr.usgs.gov/MOLA/MYD17A3H.006/2009.01.01/MYD17A3H.A2009001.h12v05.006.2015198130546.hdf.xml"
     p = argparse.ArgumentParser()
-    p.add_argument('-o', '--outfile', default='earthdata_outfile.xml',  help='Output file name')
+    p.add_argument('-o', '--outfile', help='Output file name')
     p.add_argument('-u', '--url', default=test_url,  help='URL of desired data file')
     p.add_argument('-q', '--quiet',   action='store_true', default=False, help="Quiet mode.  Don't print status messages")
     # nargs can be '+' for "one or more"
@@ -36,7 +36,9 @@ def main():
     url = args.url
 
     if not args.quiet:
+        dest = args.outfile or 'standard output'
         print "Fetching ", url
+        print "Sending to", dest
 
     # Create a password manager to deal with the 401 reponse that is returned from
     # Earthdata Login
@@ -75,7 +77,11 @@ def main():
     # Print out the result (not a good idea with binary data!)
 
     body = response.read()
-    print body
+    if args.outfile:
+        with open(args.outfile, 'wb') as fp:
+            fp.write(body)
+    else:
+        print body
 
 
 if __name__ == '__main__':
