@@ -1,11 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import argparse
-from cookielib import CookieJar
-from urllib import urlencode
-import urllib2
-import ConfigParser
+
+from http.cookiejar import CookieJar
+from urllib.parse import urlencode
+import urllib.request
+import configparser
 
 def setup_argument_parser():
     """Set up command line options.  -h or --help for help is automatic"""
@@ -24,10 +25,10 @@ def main():
     args = p.parse_args()
 
     if not args.quiet:
-        print "Reading credentials"
+        print("Reading credentials")
 
     configfile = os.path.join(os.environ['HOME'], '.earthdata_get_data.ini')
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     config.read(configfile)
 
     username = config.get('credentials', 'username')
@@ -37,15 +38,16 @@ def main():
 
     if not args.quiet:
         dest = args.outfile or 'standard output'
-        print "Fetching ", url
-        print "Sending to", dest
+        print("Fetching ", url)
+        print("Sending to", dest)
 
     # Create a password manager to deal with the 401 reponse that is returned from
     # Earthdata Login
 
-    password_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
+    password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     password_manager.add_password(None, "https://urs.earthdata.nasa.gov", username, password)
-
+    password_manager.add_password(None, "https://cdn.earthdata.nasa.gov", username, password)
+    password_manager.add_password(None, "https://n5eil01u.ecs.nsidc.org", username, password)
 
     # Create a cookie jar for storing cookies. This is used to store and return
     # the session cookie given to use by the data server (otherwise it will just
@@ -58,20 +60,20 @@ def main():
 
     # Install all the handlers.
 
-    opener = urllib2.build_opener(
-        urllib2.HTTPBasicAuthHandler(password_manager),
-        #urllib2.HTTPHandler(debuglevel=1),    # Uncomment these two lines to see
-        #urllib2.HTTPSHandler(debuglevel=1),   # details of the requests/responses
-        urllib2.HTTPCookieProcessor(cookie_jar))
-    urllib2.install_opener(opener)
+    opener = urllib.request.build_opener(
+        urllib.request.HTTPBasicAuthHandler(password_manager),
+        #urllib.request.HTTPHandler(debuglevel=1),    # Uncomment these two lines to see
+        #urllib.request.HTTPSHandler(debuglevel=1),   # details of the requests/responses
+        urllib.request.HTTPCookieProcessor(cookie_jar))
+    urllib.request.install_opener(opener)
 
 
     # Create and submit the request. There are a wide range of exceptions that
     # can be thrown here, including HTTPError and URLError. These should be
     # caught and handled.
 
-    request = urllib2.Request(url)
-    response = urllib2.urlopen(request)
+    request = urllib.request.Request(url)
+    response = urllib.request.urlopen(request)
 
 
     # Print out the result (not a good idea with binary data!)
@@ -81,7 +83,7 @@ def main():
         with open(args.outfile, 'wb') as fp:
             fp.write(body)
     else:
-        print body
+        print(body)
 
 
 if __name__ == '__main__':
